@@ -29,12 +29,19 @@ img {
   padding: 0;
 }
 
-.led ul li {
+.led .row div {
   float: left;
   width: 8px;
   height: 8px;
-  background: #444;
   margin-right: 3px;
   margin-top: 3px;
   border-radius: 2px;
+}
+
+.led .row div.Black {
+  background: #444;
+}
+
+.led .row div.White {
+  background: #fff;
 }

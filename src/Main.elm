@@ -1,72 +1,66 @@
 module Main exposing (..)
 
-import Html exposing (Html, text, div, h1, img)
-import Html.Attributes exposing (src)
+import Html
+import Html.Attributes
+import Matrix
 
 
 ---- MODEL ----
 
 
-type alias Width =
-    Int
+type alias Model =
+    { data : Matrix.Data
+    , matrix : Matrix.Matrix
+    }
 
 
-width : Width
+width : Int
 width =
     32
 
 
-type alias Height =
-    Int
-
-
-height : Height
+height : Int
 height =
     16
 
 
-type alias Item =
-    { height : Int
-    , content : String
-    , width : Int
-    , y : Int
-    , x : Int
-    , type_ : String
-    }
-
-
-type alias Model =
-    { duration : Int
-    , items : List Item
-    , id : Int
-    , brightness : Int
-    }
-
-
 init : ( Model, Cmd Msg )
 init =
-    ( { duration = 5
-      , items =
-            [ { height = 9
-              , content = "0xff839999839f9f9fff"
-              , width = 8
-              , y = 1
-              , x = 1
-              , type_ = "icon"
-              }
-            , { height = 8
-              , content = "Hello !"
-              , width = 35
-              , y = 9
-              , x = 0
-              , type_ = "text"
-              }
-            ]
-      , id = 38
-      , brightness = 15
-      }
-    , Cmd.none
-    )
+    let
+        dataA =
+            Matrix.charToLeds 'a'
+
+        matrix =
+            Matrix.empty 32 16
+
+        newMatrix =
+            Matrix.dataToMatrix dataA 1 2 matrix
+    in
+        ( { data =
+                { duration = 5
+                , items =
+                    [ { height = 9
+                      , content = "0xff839999839f9f9fff"
+                      , width = 8
+                      , y = 1
+                      , x = 1
+                      , type_ = Matrix.Icon
+                      }
+                    , { height = 8
+                      , content = "Hello !"
+                      , width = 35
+                      , y = 9
+                      , x = 0
+                      , type_ = Matrix.Text
+                      }
+                    ]
+                , id = 38
+                , brightness = 15
+                }
+          , matrix = newMatrix
+          }
+        , Cmd.none
+        )
 
 
 
@@ -86,10 +80,10 @@ update msg model =
 ---- VIEW ----
 
 
-view : Model -> Html Msg
+view : Model -> Html.Html Msg
 view model =
-    div []
-        [ displayMatrix width height model.items
+    Html.div []
+        [ displayMatrix width height model.matrix
         ]
 
 
@@ -102,8 +96,8 @@ toPixelAttr px =
         attr ++ "px"
 
 
-displayMatrix : Width -> Height -> List Item -> Html.Html Msg
-displayMatrix width height items =
+displayMatrix : Matrix.Width -> Matrix.Height -> Matrix.Matrix -> Html.Html Msg
+displayMatrix width height matrix =
     Html.div
         [ Html.Attributes.class "led"
         , Html.Attributes.style
@@ -111,9 +105,21 @@ displayMatrix width height items =
             , ( "height", height * 11 |> toPixelAttr )
             ]
         ]
-        [ Html.ul []
-            (List.map (\_ -> Html.li [] []) (List.repeat (width * height) ""))
-        ]
+        (matrix
+            |> List.map
+                (\line ->
+                    Html.div [ Html.Attributes.class "row" ] (displayLine line)
+                )
+        )
+
+
+displayLine : List Matrix.Led -> List (Html.Html Msg)
+displayLine line =
+    line
+        |> List.map
+            (\led ->
+                Html.div [ Html.Attributes.class (toString led) ] []
+            )
 
 
 
