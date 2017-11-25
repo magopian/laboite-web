@@ -1,5 +1,6 @@
 module Matrix exposing (..)
 
+import Array
 import Chars
 import Dict
 
@@ -33,7 +34,7 @@ type Led
 
 
 type alias Matrix =
-    List (List Led)
+    Array.Array (Array.Array Led)
 
 
 type alias Width =
@@ -47,7 +48,9 @@ type alias Height =
 empty : Width -> Height -> Matrix
 empty width height =
     List.repeat width Black
+        |> Array.fromList
         |> List.repeat height
+        |> Array.fromList
 
 
 {-| Compose a data buffer onto a matrix
@@ -57,7 +60,7 @@ dataToMatrix data x y matrix =
     matrix
 
 
-stringToLeds : String -> List Led
+stringToLeds : String -> Array.Array Led
 stringToLeds s =
     s
         |> String.toList
@@ -70,10 +73,12 @@ stringToLeds s =
                     _ ->
                         Black
             )
+        |> Array.fromList
 
 
-charToLeds : Char -> List (List Led)
+charToLeds : Char -> Array.Array (Array.Array Led)
 charToLeds c =
     Dict.get c Chars.charData
         |> Maybe.withDefault []
         |> List.map stringToLeds
+        |> Array.fromList

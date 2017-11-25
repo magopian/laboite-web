@@ -1,5 +1,6 @@
 module Main exposing (..)
 
+import Array
 import Html
 import Html.Attributes
 import Matrix
@@ -106,20 +107,22 @@ displayMatrix width height matrix =
             ]
         ]
         (matrix
-            |> List.map
+            |> Array.map
                 (\line ->
                     Html.div [ Html.Attributes.class "row" ] (displayLine line)
                 )
+            |> Array.toList
         )
 
 
-displayLine : List Matrix.Led -> List (Html.Html Msg)
+displayLine : Array.Array Matrix.Led -> List (Html.Html Msg)
 displayLine line =
     line
-        |> List.map
+        |> Array.map
             (\led ->
                 Html.div [ Html.Attributes.class (toString led) ] []
             )
+        |> Array.toList
 
 
 
