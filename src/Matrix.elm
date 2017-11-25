@@ -33,8 +33,12 @@ type Led
     | White
 
 
+type alias MatrixRow =
+    Array.Array Led
+
+
 type alias Matrix =
-    Array.Array (Array.Array Led)
+    Array.Array MatrixRow
 
 
 type alias Width =
@@ -45,10 +49,24 @@ type alias Height =
     Int
 
 
+emptyRow : Width -> MatrixRow
+emptyRow width =
+    Array.repeat width Black
+
+
 empty : Width -> Height -> Matrix
 empty width height =
-    Array.repeat width Black
+    emptyRow width
         |> Array.repeat height
+
+
+size : Matrix -> ( Int, Int )
+size matrix =
+    let
+        firstLine =
+            Array.get 0 matrix |> Maybe.withDefault (emptyRow 0)
+    in
+        ( Array.length firstLine, Array.length matrix )
 
 
 {-| Replace the line of a matrix's content by the content of some data starting at index x
