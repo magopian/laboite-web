@@ -31,11 +31,15 @@ init =
         dataA =
             Matrix.charToLeds 'a'
 
+        dataB =
+            Matrix.charToLeds 'b'
+
         matrix =
             Matrix.empty 32 16
 
         newMatrix =
-            Matrix.dataToMatrix dataA 1 2 matrix
+            Matrix.dataToMatrix dataA 0 0 matrix
+                |> Matrix.dataToMatrix dataB 8 8
     in
         ( { data =
                 { duration = 5

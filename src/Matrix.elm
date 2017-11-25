@@ -47,17 +47,66 @@ type alias Height =
 
 empty : Width -> Height -> Matrix
 empty width height =
-    List.repeat width Black
-        |> Array.fromList
-        |> List.repeat height
-        |> Array.fromList
+    Array.repeat width Black
+        |> Array.repeat height
+
+
+{-| Replace the line of a matrix's content by the content of some data starting at index x
+-}
+replaceLineLeds : Array.Array Led -> Int -> Array.Array Led -> Array.Array Led
+replaceLineLeds dataLine x matrixLine =
+    let
+        dataLength =
+            Array.length dataLine
+
+        matrixLength =
+            Array.length matrixLine
+
+        matrixLineBefore =
+            Array.slice 0 x matrixLine
+
+        matrixLineAfter =
+            Array.slice (x + dataLength) matrixLength matrixLine
+    in
+        matrixLineAfter
+            |> Array.append dataLine
+            |> Array.append matrixLineBefore
 
 
 {-| Compose a data buffer onto a matrix
 -}
 dataToMatrix : Matrix -> Int -> Int -> Matrix -> Matrix
 dataToMatrix data x y matrix =
-    matrix
+    let
+        dataHeight =
+            Array.length data
+
+        dataFirstLine =
+            Array.get 0 data |> Maybe.withDefault Array.empty
+
+        dataWidth =
+            Array.length dataFirstLine
+
+        yRange =
+            -- the range includes (not excludes) the end, so we need to remove 1
+            List.range 0 (dataHeight - 1)
+
+        xRange =
+            -- the range includes (not excludes) the end, so we need to remove 1
+            List.range 0 (dataWidth - 1)
+    in
+        matrix
+            |> Array.indexedMap
+                (\j line ->
+                    if (y <= j) && (j < y + dataHeight) then
+                        let
+                            dataLine =
+                                Array.get (j - y) data |> Maybe.withDefault Array.empty
+                        in
+                            replaceLineLeds dataLine x line
+                    else
+                        line
+                )
 
 
 stringToLeds : String -> Array.Array Led
