@@ -17,7 +17,7 @@ type alias Item =
     }
 
 
-type alias Data =
+type alias Slide =
     { duration : Int
     , items : List Item
     , id : Int
