@@ -50,17 +50,21 @@ init =
         fontB =
             Matrix.fromChar 'b'
 
-        content =
+        icon =
             Matrix.Icon "ff839999839f9f9fff" 8 9
+                |> Matrix.fromContent
+
+        text =
+            Matrix.Text "Hello!"
                 |> Matrix.fromContent
 
         matrix =
             Matrix.empty 32 16
 
         newMatrix =
-            Matrix.dataToMatrix fontA 0 0 matrix
-                |> Matrix.dataToMatrix fontB 8 8
-                |> Matrix.dataToMatrix content 16 4
+            matrix
+                |> Matrix.dataToMatrix icon 12 7
+                |> Matrix.dataToMatrix text 0 0
     in
         ( { data = data
           , matrix = newMatrix

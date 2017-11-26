@@ -152,11 +152,11 @@ fromChar c =
 fromContent : ItemContent -> Matrix
 fromContent itemContent =
     case itemContent of
-        Text content ->
-            empty 0 0
+        Text text ->
+            fromText text
 
-        Icon content width height ->
-            fromIcon width height content
+        Icon hexContent width height ->
+            fromIcon width height hexContent
 
 
 splitString : Int -> String -> List String
@@ -178,6 +178,25 @@ fromIcon width height content =
         |> splitString width
         |> List.map stringToLeds
         |> Array.fromList
+
+
+fromText : String -> Matrix
+fromText str =
+    let
+        chars =
+            str
+                |> String.toList
+                |> List.map fromChar
+                |> List.reverse
+
+        head =
+            List.head chars |> Maybe.withDefault (empty 0 0)
+
+        tail =
+            List.tail chars |> Maybe.withDefault []
+    in
+        tail
+            |> List.foldl append head
 
 
 hexToBin : Char -> String
@@ -233,3 +252,20 @@ hexToBin c =
 
         _ ->
             "0000"
+
+
+{-| Append to matrices to a new matrix. The two matrices MUST be of the same height
+-}
+append : Matrix -> Matrix -> Matrix
+append m1 m2 =
+    m1
+        |> Array.indexedMap
+            (\j row1 ->
+                let
+                    row2 =
+                        m2
+                            |> Array.get j
+                            |> Maybe.withDefault Array.empty
+                in
+                    Array.append row1 row2
+            )

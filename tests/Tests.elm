@@ -105,4 +105,24 @@ matrix =
                         , Matrix.stringToLeds "0000"
                         ]
                     )
+        , test "append appends two Matrices to a new Matrix" <|
+            \_ ->
+                let
+                    m1 =
+                        Matrix.fromIcon 4 2 "f0"
+
+                    m2 =
+                        Matrix.fromIcon 4 2 "0f"
+                in
+                    Expect.equal (Matrix.append m1 m2) (Matrix.fromIcon 8 2 "f00f")
+        , test "fromText converts a string to a Matrix" <|
+            \_ ->
+                let
+                    fontA =
+                        Matrix.fromChar 'a'
+
+                    fontB =
+                        Matrix.fromChar 'b'
+                in
+                    Expect.equal (Matrix.fromText "ab") (Matrix.append fontA fontB)
         ]
