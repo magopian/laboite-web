@@ -71,7 +71,7 @@ size matrix =
 
 {-| Replace the line of a matrix's content by the content of some data starting at index x
 -}
-replaceLineLeds : Array.Array Led -> Int -> Array.Array Led -> Array.Array Led
+replaceLineLeds : MatrixRow -> Int -> MatrixRow -> MatrixRow
 replaceLineLeds dataLine x matrixLine =
     let
         dataLength =
@@ -99,32 +99,33 @@ dataToMatrix data x y matrix =
         dataHeight =
             Array.length data
 
-        dataFirstLine =
-            Array.get 0 data |> Maybe.withDefault Array.empty
+        matrixHeight =
+            Array.length matrix
 
-        dataWidth =
-            Array.length dataFirstLine
+        matrixBefore =
+            Array.slice 0 y matrix
 
-        yRange =
-            -- the range includes (not excludes) the end, so we need to remove 1
-            List.range 0 (dataHeight - 1)
+        matrixToChange =
+            Array.slice y (y + dataHeight) matrix
 
-        xRange =
-            -- the range includes (not excludes) the end, so we need to remove 1
-            List.range 0 (dataWidth - 1)
-    in
-        matrix
-            |> Array.indexedMap
-                (\j line ->
-                    if (y <= j) && (j < y + dataHeight) then
+        matrixAfter =
+            Array.slice (y + dataHeight) matrixHeight matrix
+
+        matrixChanged : Matrix
+        matrixChanged =
+            matrixToChange
+                |> Array.indexedMap
+                    (\j matrixLine ->
                         let
                             dataLine =
-                                Array.get (j - y) data |> Maybe.withDefault Array.empty
+                                Array.get j data |> Maybe.withDefault (emptyRow 0)
                         in
-                            replaceLineLeds dataLine x line
-                    else
-                        line
-                )
+                            replaceLineLeds dataLine x matrixLine
+                    )
+    in
+        matrixAfter
+            |> Array.append matrixChanged
+            |> Array.append matrixBefore
 
 
 stringToLeds : String -> Array.Array Led
