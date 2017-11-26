@@ -33,7 +33,7 @@ init =
         data =
             [ { duration = 2
               , items =
-                    [ { content = Matrix.Icon "ff839999839f9f9fff" 8 9
+                    [ { content = Matrix.Icon "0xff839999839f9f9fff" 8 9
                       , y = 7
                       , x = 12
                       }
@@ -47,7 +47,7 @@ init =
               }
             , { duration = 1
               , items =
-                    [ { content = Matrix.Icon "ff839999839f9f9fff" 8 9
+                    [ { content = Matrix.Icon "0xff839999839f9f9fff" 8 9
                       , y = 7
                       , x = 4
                       }
@@ -57,6 +57,24 @@ init =
                       }
                     ]
               , id = 39
+              , brightness = 15
+              }
+            , { duration = 5
+              , items =
+                    [ { content = Matrix.Text "16:09"
+                      , y = 0
+                      , x = 4
+                      }
+                    , { content = Matrix.Icon "0xff839999839f9f9fff" 8 9
+                      , y = 8
+                      , x = 3
+                      }
+                    , { content = Matrix.Text "248"
+                      , y = 10
+                      , x = 12
+                      }
+                    ]
+              , id = 50
               , brightness = 15
               }
             ]

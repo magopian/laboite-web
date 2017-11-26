@@ -187,6 +187,8 @@ splitString size str =
 fromIcon : Width -> Height -> String -> Matrix
 fromIcon width height content =
     content
+        -- Drop the hexadecimal header "0x" from the content
+        |> String.dropLeft 2
         |> String.toList
         |> List.map hexToBin
         |> String.join ""
