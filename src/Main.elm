@@ -4,6 +4,7 @@ import Array
 import Html
 import Html.Attributes
 import Matrix
+import Time
 
 
 ---- MODEL ----
@@ -30,7 +31,7 @@ init : ( Model, Cmd Msg )
 init =
     let
         data =
-            [ { duration = 5
+            [ { duration = 2
               , items =
                     [ { content = Matrix.Icon "ff839999839f9f9fff" 8 9
                       , y = 7
@@ -61,32 +62,48 @@ init =
             ]
 
         ( currentSlide, remainingSlides ) =
-            case data of
-                [] ->
-                    ( Nothing, [] )
-
-                head :: tail ->
-                    ( Just head, tail )
-
-        matrix =
-            let
-                matrix =
-                    Matrix.empty 32 16
-            in
-                case currentSlide of
-                    Just slide ->
-                        matrix
-                            |> Matrix.itemsToMatrix slide.items
-
-                    _ ->
-                        matrix
+            nextSlide Nothing data
     in
         ( { slides = remainingSlides
-          , matrix = matrix
+          , matrix = matrixFromMaybeSlide currentSlide
           , currentSlide = currentSlide
           }
         , Cmd.none
         )
+
+
+matrixFromMaybeSlide : Maybe Matrix.Slide -> Matrix.Matrix
+matrixFromMaybeSlide maybeSlide =
+    let
+        matrix =
+            Matrix.empty 32 16
+    in
+        case maybeSlide of
+            Just slide ->
+                matrix
+                    |> Matrix.itemsToMatrix slide.items
+
+            _ ->
+                matrix
+
+
+nextSlide : Maybe Matrix.Slide -> List Matrix.Slide -> ( Maybe Matrix.Slide, List Matrix.Slide )
+nextSlide currentMaybeSlide currentRemainingSlides =
+    let
+        allSlides =
+            case currentMaybeSlide of
+                Just currentSlide ->
+                    List.append currentRemainingSlides [ currentSlide ]
+
+                _ ->
+                    currentRemainingSlides
+    in
+        case allSlides of
+            [] ->
+                ( Nothing, [] )
+
+            head :: tail ->
+                ( Just head, tail )
 
 
 
@@ -94,18 +111,24 @@ init =
 
 
 type Msg
-    = Converted String
+    = NewSlide Time.Time
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
     case msg of
-        Converted s ->
+        NewSlide _ ->
             let
-                _ =
-                    Debug.log "converted" s
+                ( currentSlide, remainingSlides ) =
+                    nextSlide model.currentSlide model.slides
             in
-                ( model, Cmd.none )
+                ( { model
+                    | slides = remainingSlides
+                    , currentSlide = currentSlide
+                    , matrix = matrixFromMaybeSlide currentSlide
+                  }
+                , Cmd.none
+                )
 
 
 
@@ -166,5 +189,19 @@ main =
         { view = view
         , init = init
         , update = update
-        , subscriptions = always Sub.none
+        , subscriptions = subscriptions
         }
+
+
+
+---- Subscriptions ----
+
+
+subscriptions : Model -> Sub Msg
+subscriptions model =
+    case model.currentSlide of
+        Just slide ->
+            Time.every ((toFloat slide.duration) * Time.second) NewSlide
+
+        _ ->
+            Sub.none
