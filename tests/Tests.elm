@@ -1,6 +1,6 @@
 module Tests exposing (..)
 
-import Array
+import Array.Hamt as Array
 import Test exposing (..)
 import Expect
 import Matrix

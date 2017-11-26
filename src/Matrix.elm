@@ -1,6 +1,6 @@
 module Matrix exposing (..)
 
-import Array
+import Array.Hamt as Array
 import Chars
 import Dict
 
@@ -84,7 +84,8 @@ replaceLineLeds dataLine x matrixLine =
             Array.slice (x + dataLength) matrixLength matrixLine
     in
         matrixLineAfter
-            |> Array.append dataLine
+            -- Slice so we don't display anything too large for the display
+            |> Array.append (Array.slice 0 matrixLength dataLine)
             |> Array.append matrixLineBefore
 
 

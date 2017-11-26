@@ -1,6 +1,6 @@
 module Main exposing (..)
 
-import Array
+import Array.Hamt as Array
 import Decoder
 import Html
 import Html.Attributes
@@ -41,7 +41,7 @@ init =
                       , y = 7
                       , x = 12
                       }
-                    , { content = Matrix.Text "Hello!"
+                    , { content = Matrix.Text "Hello !"
                       , y = 0
                       , x = 0
                       }
