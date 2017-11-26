@@ -32,11 +32,11 @@ init =
             { duration = 5
             , items =
                 [ { content = Matrix.Icon "ff839999839f9f9fff" 8 9
-                  , y = 1
-                  , x = 1
+                  , y = 7
+                  , x = 12
                   }
-                , { content = Matrix.Text "Hello !"
-                  , y = 9
+                , { content = Matrix.Text "Hello!"
+                  , y = 0
                   , x = 0
                   }
                 ]
@@ -44,30 +44,12 @@ init =
             , brightness = 15
             }
 
-        fontA =
-            Matrix.fromChar 'a'
-
-        fontB =
-            Matrix.fromChar 'b'
-
-        icon =
-            Matrix.Icon "ff839999839f9f9fff" 8 9
-                |> Matrix.fromContent
-
-        text =
-            Matrix.Text "Hello!"
-                |> Matrix.fromContent
-
         matrix =
             Matrix.empty 32 16
-
-        newMatrix =
-            matrix
-                |> Matrix.dataToMatrix icon 12 7
-                |> Matrix.dataToMatrix text 0 0
+                |> Matrix.itemsToMatrix data.items
     in
         ( { data = data
-          , matrix = newMatrix
+          , matrix = matrix
           }
         , Cmd.none
         )

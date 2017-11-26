@@ -125,6 +125,21 @@ dataToMatrix data x y matrix =
             |> Array.append matrixBefore
 
 
+itemToMatrix : Item -> Matrix -> Matrix
+itemToMatrix item matrix =
+    let
+        content =
+            fromContent item.content
+    in
+        dataToMatrix content item.x item.y matrix
+
+
+itemsToMatrix : List Item -> Matrix -> Matrix
+itemsToMatrix items matrix =
+    items
+        |> List.foldl itemToMatrix matrix
+
+
 stringToLeds : String -> MatrixRow
 stringToLeds s =
     s
