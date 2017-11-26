@@ -28,40 +28,41 @@ height =
 init : ( Model, Cmd Msg )
 init =
     let
-        dataA =
-            Matrix.charToLeds 'a'
+        data =
+            { duration = 5
+            , items =
+                [ { content = Matrix.Icon "ff839999839f9f9fff" 8 9
+                  , y = 1
+                  , x = 1
+                  }
+                , { content = Matrix.Text "Hello !"
+                  , y = 9
+                  , x = 0
+                  }
+                ]
+            , id = 38
+            , brightness = 15
+            }
 
-        dataB =
-            Matrix.charToLeds 'b'
+        fontA =
+            Matrix.fromChar 'a'
+
+        fontB =
+            Matrix.fromChar 'b'
+
+        content =
+            Matrix.Icon "ff839999839f9f9fff" 8 9
+                |> Matrix.fromContent
 
         matrix =
             Matrix.empty 32 16
 
         newMatrix =
-            Matrix.dataToMatrix dataA 0 0 matrix
-                |> Matrix.dataToMatrix dataB 8 8
+            Matrix.dataToMatrix fontA 0 0 matrix
+                |> Matrix.dataToMatrix fontB 8 8
+                |> Matrix.dataToMatrix content 16 4
     in
-        ( { data =
-                { duration = 5
-                , items =
-                    [ { height = 9
-                      , content = "0xff839999839f9f9fff"
-                      , width = 8
-                      , y = 1
-                      , x = 1
-                      , type_ = Matrix.Icon
-                      }
-                    , { height = 8
-                      , content = "Hello !"
-                      , width = 35
-                      , y = 9
-                      , x = 0
-                      , type_ = Matrix.Text
-                      }
-                    ]
-                , id = 38
-                , brightness = 15
-                }
+        ( { data = data
           , matrix = newMatrix
           }
         , Cmd.none
@@ -73,12 +74,18 @@ init =
 
 
 type Msg
-    = NoOp
+    = Converted String
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
-    ( model, Cmd.none )
+    case msg of
+        Converted s ->
+            let
+                _ =
+                    Debug.log "converted" s
+            in
+                ( model, Cmd.none )
 
 
 

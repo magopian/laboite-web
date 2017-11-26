@@ -5,18 +5,15 @@ import Chars
 import Dict
 
 
-type ItemType
-    = Text
-    | Icon
+type ItemContent
+    = Text String
+    | Icon String Width Height
 
 
 type alias Item =
-    { height : Int
-    , content : String
-    , width : Int
+    { content : ItemContent
     , y : Int
     , x : Int
-    , type_ : ItemType
     }
 
 
@@ -128,7 +125,7 @@ dataToMatrix data x y matrix =
             |> Array.append matrixBefore
 
 
-stringToLeds : String -> Array.Array Led
+stringToLeds : String -> MatrixRow
 stringToLeds s =
     s
         |> String.toList
@@ -144,9 +141,95 @@ stringToLeds s =
         |> Array.fromList
 
 
-charToLeds : Char -> Array.Array (Array.Array Led)
-charToLeds c =
+fromChar : Char -> Matrix
+fromChar c =
     Dict.get c Chars.charData
         |> Maybe.withDefault []
         |> List.map stringToLeds
         |> Array.fromList
+
+
+fromContent : ItemContent -> Matrix
+fromContent itemContent =
+    case itemContent of
+        Text content ->
+            empty 0 0
+
+        Icon content width height ->
+            fromIcon width height content
+
+
+splitString : Int -> String -> List String
+splitString size str =
+    case String.left size str of
+        "" ->
+            []
+
+        listHead ->
+            listHead :: splitString size (String.dropLeft size str)
+
+
+fromIcon : Width -> Height -> String -> Matrix
+fromIcon width height content =
+    content
+        |> String.toList
+        |> List.map hexToBin
+        |> String.join ""
+        |> splitString width
+        |> List.map stringToLeds
+        |> Array.fromList
+
+
+hexToBin : Char -> String
+hexToBin c =
+    case c of
+        '0' ->
+            "0000"
+
+        '1' ->
+            "0001"
+
+        '2' ->
+            "0010"
+
+        '3' ->
+            "0011"
+
+        '4' ->
+            "0100"
+
+        '5' ->
+            "0101"
+
+        '6' ->
+            "0110"
+
+        '7' ->
+            "0111"
+
+        '8' ->
+            "1000"
+
+        '9' ->
+            "1001"
+
+        'a' ->
+            "1010"
+
+        'b' ->
+            "1011"
+
+        'c' ->
+            "1100"
+
+        'd' ->
+            "1101"
+
+        'e' ->
+            "1110"
+
+        'f' ->
+            "1111"
+
+        _ ->
+            "0000"

@@ -46,7 +46,7 @@ matrix =
                         Matrix.stringToLeds "011001"
                 in
                     Expect.equal (Matrix.replaceLineLeds data 1 matrix) result
-        , test "charToLeds loads a font character" <|
+        , test "fromChar loads a font character" <|
             \_ ->
                 let
                     charA =
@@ -60,7 +60,7 @@ matrix =
                             , Matrix.stringToLeds "00000"
                             ]
                 in
-                    Expect.equal (Matrix.charToLeds 'a') charA
+                    Expect.equal (Matrix.fromChar 'a') charA
         , test "dataToMatrix composes data onto a matrix" <|
             \_ ->
                 let
@@ -93,4 +93,16 @@ matrix =
                             ]
                 in
                     Expect.equal (Matrix.dataToMatrix charA 1 2 matrix) result
+        , test "splitString splits a string in chunks of a given size" <|
+            \_ ->
+                Expect.equal (Matrix.splitString 4 "11110000") ([ "1111", "0000" ])
+        , test "fromIcon converts a string of hex to a Matrix" <|
+            \_ ->
+                Expect.equal
+                    (Matrix.fromIcon 4 2 "f0")
+                    (Array.fromList
+                        [ Matrix.stringToLeds "1111"
+                        , Matrix.stringToLeds "0000"
+                        ]
+                    )
         ]
