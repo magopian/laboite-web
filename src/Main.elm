@@ -4,6 +4,7 @@ import Array
 import Decoder
 import Html
 import Html.Attributes
+import Html.Events
 import Matrix
 import Time
 
@@ -12,9 +13,11 @@ import Time
 
 
 type alias Model =
-    { slides : List Matrix.Slide
+    { laboiteID : Maybe String
+    , slides : List Matrix.Slide
     , matrix : Matrix.Matrix
     , currentSlide : Maybe Matrix.Slide
+    , inputValue : String
     }
 
 
@@ -76,9 +79,11 @@ init =
         ( currentSlide, remainingSlides ) =
             nextSlide Nothing newData
     in
-        ( { slides = remainingSlides
+        ( { laboiteID = Nothing
+          , slides = remainingSlides
           , matrix = matrixFromMaybeSlide currentSlide
           , currentSlide = currentSlide
+          , inputValue = ""
           }
         , Cmd.none
         )
@@ -123,12 +128,20 @@ nextSlide currentMaybeSlide currentRemainingSlides =
 
 
 type Msg
-    = NewSlide Time.Time
+    = UpdateInputValue String
+    | SubmitLaboiteID
+    | NewSlide Time.Time
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
     case msg of
+        UpdateInputValue value ->
+            ( { model | inputValue = value }, Cmd.none )
+
+        SubmitLaboiteID ->
+            ( { model | laboiteID = Just model.inputValue }, Cmd.none )
+
         NewSlide _ ->
             let
                 ( currentSlide, remainingSlides ) =
@@ -149,6 +162,37 @@ update msg model =
 
 view : Model -> Html.Html Msg
 view model =
+    case model.laboiteID of
+        Nothing ->
+            viewGetLaboiteID model
+
+        Just laboiteID ->
+            viewSlides model
+
+
+viewGetLaboiteID : Model -> Html.Html Msg
+viewGetLaboiteID model =
+    Html.form [ Html.Events.onSubmit SubmitLaboiteID ]
+        [ Html.label []
+            [ Html.text "Laboite ID: "
+            , Html.input
+                [ Html.Attributes.type_ "text"
+                , Html.Attributes.placeholder "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"
+                , Html.Attributes.size 36
+                , Html.Events.onInput UpdateInputValue
+                ]
+                []
+            ]
+        , Html.input
+            [ Html.Attributes.type_ "submit"
+            , Html.Attributes.value "Show me the slides"
+            ]
+            []
+        ]
+
+
+viewSlides : Model -> Html.Html Msg
+viewSlides model =
     Html.div []
         [ displayMatrix width height model.matrix
         ]
