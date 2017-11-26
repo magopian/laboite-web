@@ -1,6 +1,7 @@
 module Main exposing (..)
 
 import Array
+import Decoder
 import Html
 import Html.Attributes
 import Matrix
@@ -59,28 +60,21 @@ init =
               , id = 39
               , brightness = 15
               }
-            , { duration = 5
-              , items =
-                    [ { content = Matrix.Text "16:09"
-                      , y = 0
-                      , x = 4
-                      }
-                    , { content = Matrix.Icon "0xff839999839f9f9fff" 8 9
-                      , y = 8
-                      , x = 3
-                      }
-                    , { content = Matrix.Text "248"
-                      , y = 10
-                      , x = 12
-                      }
-                    ]
-              , id = 50
-              , brightness = 15
-              }
             ]
 
+        decodedSlide =
+            Decoder.decodeSlide
+
+        newData =
+            case decodedSlide of
+                Ok slide ->
+                    slide :: data
+
+                Err msg ->
+                    Debug.crash msg
+
         ( currentSlide, remainingSlides ) =
-            nextSlide Nothing data
+            nextSlide Nothing newData
     in
         ( { slides = remainingSlides
           , matrix = matrixFromMaybeSlide currentSlide
