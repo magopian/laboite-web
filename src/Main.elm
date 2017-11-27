@@ -5,6 +5,7 @@ import Decoder
 import Html
 import Html.Attributes
 import Html.Events
+import Http
 import Matrix
 import Time
 
@@ -14,10 +15,12 @@ import Time
 
 type alias Model =
     { laboiteID : Maybe String
+    , slideInfoList : Maybe Matrix.SlideInfoList
     , slides : List Matrix.Slide
     , matrix : Matrix.Matrix
     , currentSlide : Maybe Matrix.Slide
     , inputValue : String
+    , error : Maybe Http.Error
     }
 
 
@@ -80,10 +83,12 @@ init =
             nextSlide Nothing newData
     in
         ( { laboiteID = Nothing
+          , slideInfoList = Nothing
           , slides = remainingSlides
           , matrix = matrixFromMaybeSlide currentSlide
           , currentSlide = currentSlide
           , inputValue = ""
+          , error = Nothing
           }
         , Cmd.none
         )
@@ -130,19 +135,20 @@ nextSlide currentMaybeSlide currentRemainingSlides =
 type Msg
     = UpdateInputValue String
     | SubmitLaboiteID
-    | NewSlide Time.Time
+    | NextSlide Time.Time
+    | UpdateSlideInfoList (Result Http.Error Matrix.SlideInfoList)
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
     case msg of
         UpdateInputValue value ->
-            ( { model | inputValue = value }, Cmd.none )
+            ( { model | inputValue = value, error = Nothing }, Cmd.none )
 
         SubmitLaboiteID ->
-            ( { model | laboiteID = Just model.inputValue }, Cmd.none )
+            ( { model | laboiteID = Just model.inputValue, error = Nothing }, getLaboiteSlideInfos model.inputValue )
 
-        NewSlide _ ->
+        NextSlide _ ->
             let
                 ( currentSlide, remainingSlides ) =
                     nextSlide model.currentSlide model.slides
@@ -155,6 +161,27 @@ update msg model =
                 , Cmd.none
                 )
 
+        UpdateSlideInfoList (Ok slideInfoList) ->
+            ( { model | slideInfoList = Just slideInfoList, error = Nothing }, Cmd.none )
+
+        UpdateSlideInfoList (Err err) ->
+            ( { model | error = Just err }, Cmd.none )
+
+
+getLaboiteSlideInfos : String -> Cmd Msg
+getLaboiteSlideInfos laboiteID =
+    let
+        proxy =
+            "https://cors-anywhere.herokuapp.com/"
+
+        url =
+            proxy ++ "http://dev.laboite.pro/boites/" ++ laboiteID ++ "/"
+
+        request =
+            Http.get url Decoder.slideInfoListDecoder
+    in
+        Http.send UpdateSlideInfoList request
+
 
 
 ---- VIEW ----
@@ -162,11 +189,11 @@ update msg model =
 
 view : Model -> Html.Html Msg
 view model =
-    case model.laboiteID of
+    case model.slideInfoList of
         Nothing ->
             viewGetLaboiteID model
 
-        Just laboiteID ->
+        Just _ ->
             viewSlides model
 
 
@@ -188,6 +215,19 @@ viewGetLaboiteID model =
             , Html.Attributes.value "Show me the slides"
             ]
             []
+        , Html.p []
+            (case model.error of
+                Nothing ->
+                    case model.laboiteID of
+                        Nothing ->
+                            []
+
+                        Just _ ->
+                            [ Html.text "Loading slide informations..." ]
+
+                Just err ->
+                    [ Html.text <| toString err ]
+            )
         ]
 
 
@@ -255,9 +295,14 @@ main =
 
 subscriptions : Model -> Sub Msg
 subscriptions model =
-    case model.currentSlide of
-        Just slide ->
-            Time.every ((toFloat slide.duration) * Time.second) NewSlide
-
-        _ ->
+    case model.laboiteID of
+        Nothing ->
             Sub.none
+
+        Just laboiteID ->
+            case model.currentSlide of
+                Just slide ->
+                    Time.every ((toFloat slide.duration) * Time.second) NextSlide
+
+                _ ->
+                    Sub.none

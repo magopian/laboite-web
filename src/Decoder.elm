@@ -47,6 +47,18 @@ slideDecoder =
         |> Pipeline.required "brightness" Decode.int
 
 
+slideInfoDecoder : Decode.Decoder Matrix.SlideInfo
+slideInfoDecoder =
+    Pipeline.decode Matrix.SlideInfo
+        |> Pipeline.required "last_activity" Decode.int
+        |> Pipeline.required "id" Decode.int
+
+
+slideInfoListDecoder : Decode.Decoder Matrix.SlideInfoList
+slideInfoListDecoder =
+    Decode.at [ "tiles" ] (Decode.list slideInfoDecoder)
+
+
 decodeSlide : Result String Matrix.Slide
 decodeSlide =
     Decode.decodeString
@@ -83,4 +95,29 @@ decodeSlide =
           "id": 50,
           "brightness": 15
         }
+    """
+
+
+decodeSlideInfos : Result String Matrix.SlideInfoList
+decodeSlideInfos =
+    Decode.decodeString
+        slideInfoListDecoder
+        """
+    {
+      "tiles": [
+        {
+          "last_activity": 1511714267,
+          "id": 48
+        },
+        {
+          "last_activity": 1511714267,
+          "id": 49
+        },
+        {
+          "last_activity": 1511714268,
+          "id": 50
+        }
+      ],
+      "id": 7
+    }
     """

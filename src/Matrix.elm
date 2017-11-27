@@ -25,6 +25,16 @@ type alias Slide =
     }
 
 
+type alias SlideInfo =
+    { lastActivity : Int
+    , id : Int
+    }
+
+
+type alias SlideInfoList =
+    List SlideInfo
+
+
 type Led
     = Black
     | White
