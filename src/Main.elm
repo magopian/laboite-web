@@ -24,6 +24,14 @@ type alias Model =
     }
 
 
+type alias LaboiteID =
+    String
+
+
+type alias SlideID =
+    Int
+
+
 width : Int
 width =
     32
@@ -34,64 +42,27 @@ height =
     16
 
 
+loadingSlide : Matrix.Slide
+loadingSlide =
+    Matrix.Slide
+        1
+        [ Matrix.Item (Matrix.Text "Loading") 0 0 ]
+        0
+        15
+
+
 init : ( Model, Cmd Msg )
 init =
-    let
-        data =
-            [ { duration = 2
-              , items =
-                    [ { content = Matrix.Icon "0xff839999839f9f9fff" 8 9
-                      , y = 7
-                      , x = 12
-                      }
-                    , { content = Matrix.Text "Hello !"
-                      , y = 0
-                      , x = 0
-                      }
-                    ]
-              , id = 38
-              , brightness = 15
-              }
-            , { duration = 1
-              , items =
-                    [ { content = Matrix.Icon "0xff839999839f9f9fff" 8 9
-                      , y = 7
-                      , x = 4
-                      }
-                    , { content = Matrix.Text "Foooo!"
-                      , y = 0
-                      , x = 0
-                      }
-                    ]
-              , id = 39
-              , brightness = 15
-              }
-            ]
-
-        decodedSlide =
-            Decoder.decodeSlide
-
-        newData =
-            case decodedSlide of
-                Ok slide ->
-                    slide :: data
-
-                Err msg ->
-                    Debug.crash msg
-
-        ( currentSlide, remainingSlides ) =
-            nextSlide Nothing newData
-    in
-        ( { laboiteID = Nothing
-          , slideInfoList = Nothing
-          , slides = remainingSlides
-          , matrix = matrixFromMaybeSlide currentSlide
-          , currentSlide = currentSlide
-          , inputValue = ""
-          , error = Nothing
-          }
-        , Cmd.none
-        )
+    ( { laboiteID = Nothing
+      , slideInfoList = Nothing
+      , slides = []
+      , matrix = matrixFromMaybeSlide (Just loadingSlide)
+      , currentSlide = Just loadingSlide
+      , inputValue = ""
+      , error = Nothing
+      }
+    , Cmd.none
+    )
 
 
 matrixFromMaybeSlide : Maybe Matrix.Slide -> Matrix.Matrix
@@ -137,6 +108,7 @@ type Msg
     | SubmitLaboiteID
     | NextSlide Time.Time
     | UpdateSlideInfoList (Result Http.Error Matrix.SlideInfoList)
+    | UpdateSlide (Result Http.Error Matrix.Slide)
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
@@ -146,7 +118,7 @@ update msg model =
             ( { model | inputValue = value, error = Nothing }, Cmd.none )
 
         SubmitLaboiteID ->
-            ( { model | laboiteID = Just model.inputValue, error = Nothing }, getLaboiteSlideInfos model.inputValue )
+            ( { model | laboiteID = Just model.inputValue, error = Nothing }, getSlideInfoList model.inputValue )
 
         NextSlide _ ->
             let
@@ -162,14 +134,36 @@ update msg model =
                 )
 
         UpdateSlideInfoList (Ok slideInfoList) ->
-            ( { model | slideInfoList = Just slideInfoList, error = Nothing }, Cmd.none )
+            ( { model | slideInfoList = Just slideInfoList, error = Nothing }
+            , case model.laboiteID of
+                Nothing ->
+                    Cmd.none
+
+                Just laboiteID ->
+                    slideInfoList
+                        |> List.map
+                            (\slideInfo ->
+                                getSlide laboiteID slideInfo.id
+                            )
+                        |> Cmd.batch
+            )
 
         UpdateSlideInfoList (Err err) ->
             ( { model | error = Just err }, Cmd.none )
 
+        UpdateSlide (Ok slide) ->
+            ( { model | slides = addSlide slide model.slides, error = Nothing }, Cmd.none )
 
-getLaboiteSlideInfos : String -> Cmd Msg
-getLaboiteSlideInfos laboiteID =
+        UpdateSlide (Err err) ->
+            let
+                _ =
+                    Debug.log "Failed loading slide" err
+            in
+                ( model, Cmd.none )
+
+
+getSlideInfoList : LaboiteID -> Cmd Msg
+getSlideInfoList laboiteID =
     let
         proxy =
             "https://cors-anywhere.herokuapp.com/"
@@ -181,6 +175,31 @@ getLaboiteSlideInfos laboiteID =
             Http.get url Decoder.slideInfoListDecoder
     in
         Http.send UpdateSlideInfoList request
+
+
+getSlide : LaboiteID -> SlideID -> Cmd Msg
+getSlide laboiteID slideID =
+    let
+        proxy =
+            "https://cors-anywhere.herokuapp.com/"
+
+        url =
+            proxy ++ "http://dev.laboite.pro/boites/" ++ laboiteID ++ "/tiles/" ++ (toString slideID) ++ "/"
+
+        request =
+            Http.get url Decoder.slideDecoder
+    in
+        Http.send UpdateSlide request
+
+
+addSlide : Matrix.Slide -> List Matrix.Slide -> List Matrix.Slide
+addSlide slide slides =
+    let
+        filteredSlides =
+            slides
+                |> List.filter (\s -> s /= loadingSlide && s /= slide)
+    in
+        List.append slides [ slide ]
 
 
 

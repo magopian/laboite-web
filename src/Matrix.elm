@@ -26,7 +26,7 @@ type alias Slide =
 
 
 type alias SlideInfo =
-    { lastActivity : Int
+    { last_activity : Int
     , id : Int
     }
 

@@ -59,6 +59,8 @@ slideInfoListDecoder =
     Decode.at [ "tiles" ] (Decode.list slideInfoDecoder)
 
 
+{-| Only here for reference/mocking
+-}
 decodeSlide : Result String Matrix.Slide
 decodeSlide =
     Decode.decodeString
@@ -98,6 +100,8 @@ decodeSlide =
     """
 
 
+{-| Only here for reference/mocking
+-}
 decodeSlideInfos : Result String Matrix.SlideInfoList
 decodeSlideInfos =
     Decode.decodeString
