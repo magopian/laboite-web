@@ -7,7 +7,9 @@ import Html.Attributes
 import Html.Events
 import Http
 import Matrix
+import Navigation
 import Time
+import UrlParser exposing ((<?>))
 
 
 ---- MODEL ----
@@ -51,8 +53,8 @@ loadingSlide =
         15
 
 
-init : ( Model, Cmd Msg )
-init =
+init : Navigation.Location -> ( Model, Cmd Msg )
+init location =
     ( { laboiteID = Nothing
       , slideInfoList = Nothing
       , slides = []
@@ -61,8 +63,44 @@ init =
       , inputValue = ""
       , error = Nothing
       }
-    , Cmd.none
+    , parseUrl location
+        |> newUrl
     )
+
+
+parseUrl : Navigation.Location -> Maybe LaboiteID
+parseUrl location =
+    let
+        { laboiteID } =
+            UrlParser.parseHash (UrlParser.map QueryData queryParser) location
+                |> Maybe.withDefault { laboiteID = Nothing }
+    in
+        laboiteID
+
+
+type alias QueryData =
+    { laboiteID : Maybe LaboiteID }
+
+
+queryParser : UrlParser.Parser (Maybe LaboiteID -> a) a
+queryParser =
+    UrlParser.top
+        <?> UrlParser.stringParam "laboiteID"
+
+
+urlFromData : LaboiteID -> String
+urlFromData laboiteID =
+    "?laboiteID=" ++ laboiteID
+
+
+newUrl : Maybe LaboiteID -> Cmd Msg
+newUrl maybeLaboiteID =
+    case maybeLaboiteID of
+        Nothing ->
+            Cmd.none
+
+        Just laboiteID ->
+            Navigation.newUrl (urlFromData laboiteID)
 
 
 matrixFromMaybeSlide : Maybe Matrix.Slide -> Matrix.Matrix
@@ -113,6 +151,7 @@ type Msg
     | NextSlide Time.Time
     | UpdateSlideInfoList (Result Http.Error Matrix.SlideInfoList)
     | UpdateSlide (Result Http.Error Matrix.Slide)
+    | UrlChange Navigation.Location
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
@@ -122,7 +161,7 @@ update msg model =
             ( { model | inputValue = value, error = Nothing }, Cmd.none )
 
         SubmitLaboiteID ->
-            ( { model | laboiteID = Just model.inputValue, error = Nothing }, getSlideInfoList model.inputValue )
+            ( { model | laboiteID = Just model.inputValue, error = Nothing }, newUrl (Just model.inputValue) )
 
         NextSlide _ ->
             let
@@ -164,6 +203,20 @@ update msg model =
                     Debug.log "Failed loading slide" err
             in
                 ( model, Cmd.none )
+
+        UrlChange location ->
+            let
+                maybeLaboiteID =
+                    parseUrl location
+            in
+                ( { model | laboiteID = maybeLaboiteID, inputValue = Maybe.withDefault "" maybeLaboiteID }
+                , case maybeLaboiteID of
+                    Nothing ->
+                        Cmd.none
+
+                    Just laboiteID ->
+                        getSlideInfoList laboiteID
+                )
 
 
 getSlideInfoList : LaboiteID -> Cmd Msg
@@ -229,6 +282,7 @@ viewGetLaboiteID model =
                 [ Html.Attributes.type_ "text"
                 , Html.Attributes.placeholder "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"
                 , Html.Attributes.size 36
+                , Html.Attributes.value model.inputValue
                 , Html.Events.onInput UpdateInputValue
                 ]
                 []
@@ -304,7 +358,7 @@ displayLine line =
 
 main : Program Never Model Msg
 main =
-    Html.program
+    Navigation.program UrlChange
         { view = view
         , init = init
         , update = update
