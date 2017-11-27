@@ -90,10 +90,14 @@ nextSlide currentMaybeSlide currentRemainingSlides =
 
                 _ ->
                     currentRemainingSlides
+
+        withoutLoadingSlide =
+            allSlides
+                |> List.filter (\s -> s /= loadingSlide)
     in
-        case allSlides of
+        case withoutLoadingSlide of
             [] ->
-                ( Nothing, [] )
+                ( Just loadingSlide, [] )
 
             head :: tail ->
                 ( Just head, tail )
@@ -152,7 +156,7 @@ update msg model =
             ( { model | error = Just err }, Cmd.none )
 
         UpdateSlide (Ok slide) ->
-            ( { model | slides = addSlide slide model.slides, error = Nothing }, Cmd.none )
+            ( { model | slides = updateSlide slide model.slides, error = Nothing }, Cmd.none )
 
         UpdateSlide (Err err) ->
             let
@@ -192,12 +196,12 @@ getSlide laboiteID slideID =
         Http.send UpdateSlide request
 
 
-addSlide : Matrix.Slide -> List Matrix.Slide -> List Matrix.Slide
-addSlide slide slides =
+updateSlide : Matrix.Slide -> List Matrix.Slide -> List Matrix.Slide
+updateSlide slide slides =
     let
         filteredSlides =
             slides
-                |> List.filter (\s -> s /= loadingSlide && s /= slide)
+                |> List.filter (\s -> s /= slide)
     in
         List.append slides [ slide ]
 
