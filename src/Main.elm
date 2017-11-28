@@ -20,7 +20,6 @@ type alias Model =
     , slideInfoList : Maybe Matrix.SlideInfoList
     , slides : List Matrix.Slide
     , matrix : Matrix.Matrix
-    , currentSlide : Maybe Matrix.Slide
     , inputValue : String
     , error : Maybe Http.Error
     }
@@ -47,7 +46,7 @@ height =
 loadingSlide : Matrix.Slide
 loadingSlide =
     Matrix.Slide
-        1
+        60
         [ Matrix.Item (Matrix.Text "Loading") 0 0 ]
         0
         15
@@ -58,8 +57,7 @@ init location =
     ( { laboiteID = Nothing
       , slideInfoList = Nothing
       , slides = []
-      , matrix = matrixFromMaybeSlide (Just loadingSlide)
-      , currentSlide = Just loadingSlide
+      , matrix = matrixFromSlides []
       , inputValue = ""
       , error = Nothing
       }
@@ -103,42 +101,27 @@ newUrl maybeLaboiteID =
             Navigation.newUrl (urlFromData laboiteID)
 
 
-matrixFromMaybeSlide : Maybe Matrix.Slide -> Matrix.Matrix
-matrixFromMaybeSlide maybeSlide =
+matrixFromSlides : List Matrix.Slide -> Matrix.Matrix
+matrixFromSlides slides =
     let
+        slide =
+            getDisplaySlide slides
+
         matrix =
             Matrix.empty 32 16
     in
-        case maybeSlide of
-            Just slide ->
-                matrix
-                    |> Matrix.itemsToMatrix slide.items
-
-            _ ->
-                matrix
+        matrix
+            |> Matrix.itemsToMatrix slide.items
 
 
-nextSlide : Maybe Matrix.Slide -> List Matrix.Slide -> ( Maybe Matrix.Slide, List Matrix.Slide )
-nextSlide currentMaybeSlide currentRemainingSlides =
-    let
-        allSlides =
-            case currentMaybeSlide of
-                Just currentSlide ->
-                    List.append currentRemainingSlides [ currentSlide ]
+cycleSlides : List Matrix.Slide -> List Matrix.Slide
+cycleSlides slides =
+    case slides of
+        [] ->
+            []
 
-                _ ->
-                    currentRemainingSlides
-
-        withoutLoadingSlide =
-            allSlides
-                |> List.filter (\s -> s /= loadingSlide)
-    in
-        case withoutLoadingSlide of
-            [] ->
-                ( Just loadingSlide, [] )
-
-            head :: tail ->
-                ( Just head, tail )
+        head :: tail ->
+            List.append tail [ head ]
 
 
 
@@ -165,15 +148,19 @@ update msg model =
 
         NextSlide _ ->
             let
-                ( currentSlide, remainingSlides ) =
-                    nextSlide model.currentSlide model.slides
+                cycledSlides =
+                    cycleSlides model.slides
             in
                 ( { model
-                    | slides = remainingSlides
-                    , currentSlide = currentSlide
-                    , matrix = matrixFromMaybeSlide currentSlide
+                    | slides = cycledSlides
+                    , matrix = matrixFromSlides cycledSlides
                   }
-                , Cmd.none
+                , case model.laboiteID of
+                    Just laboiteID ->
+                        requestSlideInfoList laboiteID
+
+                    _ ->
+                        Cmd.none
                 )
 
         UpdateSlideInfoList (Ok slideInfoList) ->
@@ -186,7 +173,7 @@ update msg model =
                     slideInfoList
                         |> List.map
                             (\slideInfo ->
-                                getSlide laboiteID slideInfo.id
+                                requestSlide laboiteID slideInfo.id
                             )
                         |> Cmd.batch
             )
@@ -195,7 +182,20 @@ update msg model =
             ( { model | error = Just err }, Cmd.none )
 
         UpdateSlide (Ok slide) ->
-            ( { model | slides = updateSlide slide model.slides, error = Nothing }, Cmd.none )
+            let
+                newSlides =
+                    updateSlide slide model.slides
+
+                newMatrix =
+                    case model.slides of
+                        [] ->
+                            -- No slide yet: immediately replace the loading slide
+                            matrixFromSlides newSlides
+
+                        _ ->
+                            model.matrix
+            in
+                ( { model | slides = newSlides, matrix = newMatrix, error = Nothing }, Cmd.none )
 
         UpdateSlide (Err err) ->
             let
@@ -215,12 +215,19 @@ update msg model =
                         Cmd.none
 
                     Just laboiteID ->
-                        getSlideInfoList laboiteID
+                        requestSlideInfoList laboiteID
                 )
 
 
-getSlideInfoList : LaboiteID -> Cmd Msg
-getSlideInfoList laboiteID =
+getDisplaySlide : List Matrix.Slide -> Matrix.Slide
+getDisplaySlide slides =
+    slides
+        |> List.head
+        |> Maybe.withDefault loadingSlide
+
+
+requestSlideInfoList : LaboiteID -> Cmd Msg
+requestSlideInfoList laboiteID =
     let
         proxy =
             "https://cors-anywhere.herokuapp.com/"
@@ -234,8 +241,8 @@ getSlideInfoList laboiteID =
         Http.send UpdateSlideInfoList request
 
 
-getSlide : LaboiteID -> SlideID -> Cmd Msg
-getSlide laboiteID slideID =
+requestSlide : LaboiteID -> SlideID -> Cmd Msg
+requestSlide laboiteID slideID =
     let
         proxy =
             "https://cors-anywhere.herokuapp.com/"
@@ -252,11 +259,23 @@ getSlide laboiteID slideID =
 updateSlide : Matrix.Slide -> List Matrix.Slide -> List Matrix.Slide
 updateSlide slide slides =
     let
-        filteredSlides =
+        updatedSlides =
             slides
-                |> List.filter (\s -> s /= slide)
+                |> List.map
+                    (\s ->
+                        if s.id == slide.id then
+                            -- update the slide
+                            slide
+                        else
+                            s
+                    )
     in
-        List.append slides [ slide ]
+        if List.member slide updatedSlides then
+            -- The slide was in the list of slides and was updated
+            updatedSlides
+        else
+            -- The slide wasn't in the list, so add it
+            List.append updatedSlides [ slide ]
 
 
 
@@ -377,9 +396,8 @@ subscriptions model =
             Sub.none
 
         Just laboiteID ->
-            case model.currentSlide of
-                Just slide ->
-                    Time.every ((toFloat slide.duration) * Time.second) NextSlide
-
-                _ ->
-                    Sub.none
+            let
+                slide =
+                    getDisplaySlide model.slides
+            in
+                Time.every ((toFloat slide.duration) * Time.second) NextSlide
