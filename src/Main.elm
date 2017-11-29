@@ -329,8 +329,10 @@ viewGetLaboiteID model =
 
 viewSlides : Model -> Html.Html Msg
 viewSlides model =
-    Html.div []
-        [ displayMatrix width height model.matrix
+    Html.div [ Html.Attributes.class "matrix-container" ]
+        [ Html.div [ Html.Attributes.class "matrix" ]
+            [ displayMatrix width height model.matrix
+            ]
         ]
 
 
