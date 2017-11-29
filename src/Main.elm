@@ -346,12 +346,7 @@ toPixelAttr px =
 displayMatrix : Matrix.Width -> Matrix.Height -> Matrix.Matrix -> Html.Html Msg
 displayMatrix width height matrix =
     Html.div
-        [ Html.Attributes.class "led"
-        , Html.Attributes.style
-            [ ( "width", width * 11 |> toPixelAttr )
-            , ( "height", height * 11 |> toPixelAttr )
-            ]
-        ]
+        [ Html.Attributes.class "led" ]
         (matrix
             |> Array.map
                 (\line ->
