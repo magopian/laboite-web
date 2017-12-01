@@ -22,6 +22,7 @@ type alias Model =
     , matrix : Matrix.Matrix
     , inputValue : String
     , error : Maybe Http.Error
+    , tick : Int
     }
 
 
@@ -57,9 +58,10 @@ init location =
     ( { laboiteID = Nothing
       , slideInfoList = Nothing
       , slides = []
-      , matrix = matrixFromSlides []
+      , matrix = matrixFromSlides 0 []
       , inputValue = ""
       , error = Nothing
+      , tick = 0
       }
     , parseUrl location
         |> newUrl
@@ -101,8 +103,8 @@ newUrl maybeLaboiteID =
             Navigation.newUrl (urlFromData laboiteID)
 
 
-matrixFromSlides : List Matrix.Slide -> Matrix.Matrix
-matrixFromSlides slides =
+matrixFromSlides : Int -> List Matrix.Slide -> Matrix.Matrix
+matrixFromSlides tick slides =
     let
         slide =
             getDisplaySlide slides
@@ -111,7 +113,7 @@ matrixFromSlides slides =
             Matrix.empty 32 16
     in
         matrix
-            |> Matrix.itemsToMatrix slide.items
+            |> Matrix.itemsToMatrix tick slide.items
 
 
 cycleSlides : List Matrix.Slide -> List Matrix.Slide
@@ -135,6 +137,7 @@ type Msg
     | UpdateSlideInfoList (Result Http.Error Matrix.SlideInfoList)
     | UpdateSlide (Result Http.Error Matrix.Slide)
     | UrlChange Navigation.Location
+    | NewTick Time.Time
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
@@ -153,7 +156,8 @@ update msg model =
             in
                 ( { model
                     | slides = cycledSlides
-                    , matrix = matrixFromSlides cycledSlides
+                    , matrix = matrixFromSlides 0 cycledSlides
+                    , tick = 0
                   }
                 , case model.laboiteID of
                     Just laboiteID ->
@@ -186,16 +190,16 @@ update msg model =
                 newSlides =
                     updateSlide slide model.slides
 
-                newMatrix =
+                ( newMatrix, newTick ) =
                     case model.slides of
                         [] ->
                             -- No slide yet: immediately replace the loading slide
-                            matrixFromSlides newSlides
+                            ( matrixFromSlides 0 newSlides, 0 )
 
                         _ ->
-                            model.matrix
+                            ( model.matrix, model.tick )
             in
-                ( { model | slides = newSlides, matrix = newMatrix, error = Nothing }, Cmd.none )
+                ( { model | slides = newSlides, matrix = newMatrix, error = Nothing, tick = newTick }, Cmd.none )
 
         UpdateSlide (Err err) ->
             let
@@ -217,6 +221,13 @@ update msg model =
                     Just laboiteID ->
                         requestSlideInfoList laboiteID
                 )
+
+        NewTick _ ->
+            let
+                newTick =
+                    model.tick + 1
+            in
+                ( { model | tick = newTick, matrix = matrixFromSlides newTick model.slides }, Cmd.none )
 
 
 getDisplaySlide : List Matrix.Slide -> Matrix.Slide
@@ -397,4 +408,7 @@ subscriptions model =
                 slide =
                     getDisplaySlide model.slides
             in
-                Time.every ((toFloat slide.duration) * Time.second) NextSlide
+                Sub.batch
+                    [ Time.every ((toFloat slide.duration) * Time.second) NextSlide
+                    , Time.every (50 * Time.millisecond) NewTick
+                    ]

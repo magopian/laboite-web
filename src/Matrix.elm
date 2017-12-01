@@ -77,9 +77,12 @@ size matrix =
 
 
 {-| Replace the line of a matrix's content by the content of some data starting at index x
+
+If the data doesn't fit, scroll it in from the right.
+
 -}
-replaceLineLeds : MatrixRow -> Int -> MatrixRow -> MatrixRow
-replaceLineLeds dataLine x matrixLine =
+replaceLineLeds : Int -> MatrixRow -> Int -> MatrixRow -> MatrixRow
+replaceLineLeds tick dataLine x matrixLine =
     let
         dataLength =
             Array.length dataLine
@@ -87,22 +90,49 @@ replaceLineLeds dataLine x matrixLine =
         matrixLength =
             Array.length matrixLine
 
+        -- Number of pixels available in matrixLine to the right of coordinate x
+        availableLength =
+            matrixLength - x
+
+        scrolledData =
+            if dataLength + x > matrixLength then
+                let
+                    paddedData =
+                        -- Padd it from the left so it scrolls in.
+                        Array.append (emptyRow availableLength) dataLine
+
+                    paddedLength =
+                        Array.length paddedData
+
+                    offset =
+                        tick % paddedLength
+                in
+                    Array.slice offset paddedLength paddedData
+            else
+                dataLine
+
+        clippedData =
+            Array.slice 0 availableLength scrolledData
+
+        clippedDataLength =
+            Array.length clippedData
+
         matrixLineBefore =
             Array.slice 0 x matrixLine
 
         matrixLineAfter =
-            Array.slice (x + dataLength) matrixLength matrixLine
+            Array.slice (x + clippedDataLength) matrixLength matrixLine
     in
         matrixLineAfter
             -- Slice so we don't display anything too large for the display
-            |> Array.append (Array.slice 0 matrixLength dataLine)
+            |> Array.append clippedData
             |> Array.append matrixLineBefore
 
 
-{-| Compose a data buffer onto a matrix
+{-| Compose a data buffer onto a matrix at the x y coordinates.
 -}
-dataToMatrix : Matrix -> Int -> Int -> Matrix -> Matrix
-dataToMatrix data x y matrix =
+dataToMatrix : Int -> Matrix -> Int -> Int -> Matrix -> Matrix
+dataToMatrix tick data x y matrix =
     let
         dataHeight =
             Array.length data
@@ -128,7 +158,7 @@ dataToMatrix data x y matrix =
                             dataLine =
                                 Array.get j data |> Maybe.withDefault (emptyRow 0)
                         in
-                            replaceLineLeds dataLine x matrixLine
+                            replaceLineLeds tick dataLine x matrixLine
                     )
     in
         matrixAfter
@@ -136,19 +166,19 @@ dataToMatrix data x y matrix =
             |> Array.append matrixBefore
 
 
-itemToMatrix : Item -> Matrix -> Matrix
-itemToMatrix item matrix =
+itemToMatrix : Int -> Item -> Matrix -> Matrix
+itemToMatrix tick item matrix =
     let
         content =
             fromContent item.content
     in
-        dataToMatrix content item.x item.y matrix
+        dataToMatrix tick content item.x item.y matrix
 
 
-itemsToMatrix : List Item -> Matrix -> Matrix
-itemsToMatrix items matrix =
+itemsToMatrix : Int -> List Item -> Matrix -> Matrix
+itemsToMatrix tick items matrix =
     items
-        |> List.foldl itemToMatrix matrix
+        |> List.foldl (itemToMatrix tick) matrix
 
 
 stringToLeds : String -> MatrixRow
