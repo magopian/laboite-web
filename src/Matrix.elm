@@ -77,6 +77,9 @@ size matrix =
 
 
 {-| Replace the line of a matrix's content by the content of some data starting at index x
+
+If the data doesn't fit, scroll it in from the right.
+
 -}
 replaceLineLeds : Int -> MatrixRow -> Int -> MatrixRow -> MatrixRow
 replaceLineLeds tick dataLine x matrixLine =
@@ -94,10 +97,17 @@ replaceLineLeds tick dataLine x matrixLine =
         scrolledData =
             if dataLength + x > matrixLength then
                 let
+                    paddedData =
+                        -- Padd it from the left so it scrolls in.
+                        Array.append (emptyRow availableLength) dataLine
+
+                    paddedLength =
+                        Array.length paddedData
+
                     offset =
-                        tick % dataLength
+                        tick % paddedLength
                 in
-                    Array.slice offset dataLength dataLine
+                    Array.slice offset paddedLength paddedData
             else
                 dataLine
 
@@ -120,10 +130,6 @@ replaceLineLeds tick dataLine x matrixLine =
 
 
 {-| Compose a data buffer onto a matrix at the x y coordinates.
-
-If the data doesn't fit, display it scrolled by "tick" pixels, and then
-clip it.
-
 -}
 dataToMatrix : Int -> Matrix -> Int -> Int -> Matrix -> Matrix
 dataToMatrix tick data x y matrix =

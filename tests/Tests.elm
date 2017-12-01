@@ -39,30 +39,30 @@ matrix =
                         Matrix.stringToLeds "011001"
                 in
                     Expect.equal (Matrix.replaceLineLeds 0 data 1 matrix) result
-        , test "replaceLineLeds replaces some leds in a line starting at some index, clipping to the matrix length" <|
+        , test "replaceLineLeds replaces some leds in a line starting at some index, left-padded and clipped to the matrix length if it's bigger than the destination matrix" <|
             \_ ->
                 let
                     matrix =
                         Matrix.stringToLeds "000111"
 
                     data =
-                        Matrix.stringToLeds "0011"
+                        Matrix.stringToLeds "1111"
 
                     result =
                         Matrix.stringToLeds "000100"
                 in
                     Expect.equal (Matrix.replaceLineLeds 0 data 4 matrix) result
-        , test "replaceLineLeds replaces some leds in a line starting at some index, shifted (scrolled) by a 'tick' amount if it's bigger than the destination matrix" <|
+        , test "replaceLineLeds replaces some leds in a line starting at some index, left padded and shifted (scrolled) in by a 'tick' amount if it's bigger than the destination matrix" <|
             \_ ->
                 let
                     matrix =
-                        Matrix.stringToLeds "000111"
+                        Matrix.stringToLeds "000000"
 
                     data =
-                        Matrix.stringToLeds "0011"
+                        Matrix.stringToLeds "1111"
 
                     result =
-                        Matrix.stringToLeds "000101"
+                        Matrix.stringToLeds "000001"
                 in
                     Expect.equal (Matrix.replaceLineLeds 1 data 4 matrix) result
         , test "fromChar loads a font character" <|
@@ -112,38 +112,6 @@ matrix =
                             ]
                 in
                     Expect.equal (Matrix.dataToMatrix 0 charA 1 2 matrix) result
-        , test "dataToMatrix composes data onto a matrix and clips content that doesn't fit" <|
-            \_ ->
-                let
-                    charA =
-                        Array.fromList
-                            [ Matrix.stringToLeds "00000"
-                            , Matrix.stringToLeds "00000"
-                            , Matrix.stringToLeds "01110"
-                            , Matrix.stringToLeds "10010"
-                            , Matrix.stringToLeds "10110"
-                            , Matrix.stringToLeds "01010"
-                            , Matrix.stringToLeds "00000"
-                            ]
-
-                    matrix =
-                        Matrix.empty 4 10
-
-                    result =
-                        Array.fromList
-                            [ Matrix.stringToLeds "0000"
-                            , Matrix.stringToLeds "0000"
-                            , Matrix.stringToLeds "0000"
-                            , Matrix.stringToLeds "0000"
-                            , Matrix.stringToLeds "0011"
-                            , Matrix.stringToLeds "0100"
-                            , Matrix.stringToLeds "0101"
-                            , Matrix.stringToLeds "0010"
-                            , Matrix.stringToLeds "0000"
-                            , Matrix.stringToLeds "0000"
-                            ]
-                in
-                    Expect.equal (Matrix.dataToMatrix 0 charA 1 2 matrix) result
         , test "dataToMatrix composes data onto a matrix and scrolls content that doesn't fit" <|
             \_ ->
                 let
@@ -175,7 +143,7 @@ matrix =
                             , Matrix.stringToLeds "0000"
                             ]
                 in
-                    Expect.equal (Matrix.dataToMatrix 1 charA 1 2 matrix) result
+                    Expect.equal (Matrix.dataToMatrix 4 charA 1 2 matrix) result
         , test "splitString splits a string in chunks of a given size" <|
             \_ ->
                 Expect.equal (Matrix.splitString 4 "11110000") ([ "1111", "0000" ])
