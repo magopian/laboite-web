@@ -198,10 +198,21 @@ stringToLeds s =
 
 fromChar : Char -> Matrix
 fromChar c =
-    Dict.get c Chars.charData
-        |> Maybe.withDefault []
-        |> List.map stringToLeds
-        |> Array.fromList
+    let
+        charData =
+            if Dict.member c Chars.charData then
+                Dict.get c Chars.charData
+            else
+                Dict.get '?' Chars.charData
+    in
+        case charData of
+            Just data ->
+                data
+                    |> List.map stringToLeds
+                    |> Array.fromList
+
+            Nothing ->
+                Debug.crash "aouch, missing a font, and fallback missing"
 
 
 fromContent : ItemContent -> Matrix

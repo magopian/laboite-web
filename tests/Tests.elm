@@ -80,6 +80,9 @@ matrix =
                             ]
                 in
                     Expect.equal (Matrix.fromChar 'a') charA
+        , test "fromChar displays a '?' if the char isn't in the font file" <|
+            \_ ->
+                Expect.equal (Matrix.fromChar 'î') (Matrix.fromChar '?')
         , test "dataToMatrix composes data onto a matrix" <|
             \_ ->
                 let
