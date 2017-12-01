@@ -22,6 +22,7 @@ type alias Model =
     , matrix : Matrix.Matrix
     , inputValue : String
     , error : Maybe Http.Error
+    , tick : Int
     }
 
 
@@ -57,9 +58,10 @@ init location =
     ( { laboiteID = Nothing
       , slideInfoList = Nothing
       , slides = []
-      , matrix = matrixFromSlides []
+      , matrix = matrixFromSlides 0 []
       , inputValue = ""
       , error = Nothing
+      , tick = 0
       }
     , parseUrl location
         |> newUrl
@@ -101,8 +103,8 @@ newUrl maybeLaboiteID =
             Navigation.newUrl (urlFromData laboiteID)
 
 
-matrixFromSlides : List Matrix.Slide -> Matrix.Matrix
-matrixFromSlides slides =
+matrixFromSlides : Int -> List Matrix.Slide -> Matrix.Matrix
+matrixFromSlides tick slides =
     let
         slide =
             getDisplaySlide slides
@@ -111,7 +113,7 @@ matrixFromSlides slides =
             Matrix.empty 32 16
     in
         matrix
-            |> Matrix.itemsToMatrix slide.items
+            |> Matrix.itemsToMatrix tick slide.items
 
 
 cycleSlides : List Matrix.Slide -> List Matrix.Slide
@@ -153,7 +155,8 @@ update msg model =
             in
                 ( { model
                     | slides = cycledSlides
-                    , matrix = matrixFromSlides cycledSlides
+                    , matrix = matrixFromSlides 0 cycledSlides
+                    , tick = 0
                   }
                 , case model.laboiteID of
                     Just laboiteID ->
@@ -186,16 +189,16 @@ update msg model =
                 newSlides =
                     updateSlide slide model.slides
 
-                newMatrix =
+                ( newMatrix, newTick ) =
                     case model.slides of
                         [] ->
                             -- No slide yet: immediately replace the loading slide
-                            matrixFromSlides newSlides
+                            ( matrixFromSlides 0 newSlides, 0 )
 
                         _ ->
-                            model.matrix
+                            ( model.matrix, model.tick )
             in
-                ( { model | slides = newSlides, matrix = newMatrix, error = Nothing }, Cmd.none )
+                ( { model | slides = newSlides, matrix = newMatrix, error = Nothing, tick = newTick }, Cmd.none )
 
         UpdateSlide (Err err) ->
             let
