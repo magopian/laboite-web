@@ -240,11 +240,9 @@ getDisplaySlide slides =
 requestSlideInfoList : LaboiteID -> Cmd Msg
 requestSlideInfoList laboiteID =
     let
-        proxy =
-            "https://cors-anywhere.herokuapp.com/"
 
         url =
-            proxy ++ "http://dev.laboite.pro/boites/" ++ laboiteID ++ "/"
+            "https://lenuage.redgick.com/boites/" ++ laboiteID ++ "/"
 
         request =
             Http.get url Decoder.slideInfoListDecoder
