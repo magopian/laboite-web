@@ -50,7 +50,6 @@ loadingSlide =
         60
         [ Matrix.Item (Matrix.Text "Loading") 0 0 ]
         0
-        15
 
 
 init : Navigation.Location -> ( Model, Cmd Msg )
@@ -240,11 +239,8 @@ getDisplaySlide slides =
 requestSlideInfoList : LaboiteID -> Cmd Msg
 requestSlideInfoList laboiteID =
     let
-        proxy =
-            "https://cors-anywhere.herokuapp.com/"
-
         url =
-            proxy ++ "http://dev.laboite.pro/boites/" ++ laboiteID ++ "/"
+            "https://lenuage.redgick.com/boites/" ++ laboiteID ++ "/"
 
         request =
             Http.get url Decoder.slideInfoListDecoder
@@ -255,11 +251,8 @@ requestSlideInfoList laboiteID =
 requestSlide : LaboiteID -> SlideID -> Cmd Msg
 requestSlide laboiteID slideID =
     let
-        proxy =
-            "https://cors-anywhere.herokuapp.com/"
-
         url =
-            proxy ++ "http://dev.laboite.pro/boites/" ++ laboiteID ++ "/tiles/" ++ (toString slideID) ++ "/"
+            "https://lenuage.redgick.com/boites/" ++ laboiteID ++ "/tiles/" ++ (toString slideID) ++ "/"
 
         request =
             Http.get url Decoder.slideDecoder

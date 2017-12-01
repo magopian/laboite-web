@@ -21,7 +21,6 @@ type alias Slide =
     { duration : Int
     , items : List Item
     , id : Int
-    , brightness : Int
     }
 
 

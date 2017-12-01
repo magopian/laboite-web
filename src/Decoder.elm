@@ -44,7 +44,6 @@ slideDecoder =
         |> Pipeline.required "duration" Decode.int
         |> Pipeline.required "items" (Decode.list itemDecoder)
         |> Pipeline.required "id" Decode.int
-        |> Pipeline.required "brightness" Decode.int
 
 
 slideInfoDecoder : Decode.Decoder Matrix.SlideInfo
