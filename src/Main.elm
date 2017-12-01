@@ -137,6 +137,7 @@ type Msg
     | UpdateSlideInfoList (Result Http.Error Matrix.SlideInfoList)
     | UpdateSlide (Result Http.Error Matrix.Slide)
     | UrlChange Navigation.Location
+    | NewTick Time.Time
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
@@ -220,6 +221,13 @@ update msg model =
                     Just laboiteID ->
                         requestSlideInfoList laboiteID
                 )
+
+        NewTick _ ->
+            let
+                newTick =
+                    model.tick + 1
+            in
+                ( { model | tick = newTick, matrix = matrixFromSlides newTick model.slides }, Cmd.none )
 
 
 getDisplaySlide : List Matrix.Slide -> Matrix.Slide
@@ -400,4 +408,7 @@ subscriptions model =
                 slide =
                     getDisplaySlide model.slides
             in
-                Time.every ((toFloat slide.duration) * Time.second) NextSlide
+                Sub.batch
+                    [ Time.every ((toFloat slide.duration) * Time.second) NextSlide
+                    , Time.every (50 * Time.millisecond) NewTick
+                    ]
