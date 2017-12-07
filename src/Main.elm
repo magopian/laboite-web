@@ -52,16 +52,21 @@ loadingSlide =
         0
 
 
+initialModel : Model
+initialModel =
+    { laboiteID = Nothing
+    , slideInfoList = Nothing
+    , slides = []
+    , matrix = matrixFromSlides 0 []
+    , inputValue = ""
+    , error = Nothing
+    , tick = 0
+    }
+
+
 init : Navigation.Location -> ( Model, Cmd Msg )
 init location =
-    ( { laboiteID = Nothing
-      , slideInfoList = Nothing
-      , slides = []
-      , matrix = matrixFromSlides 0 []
-      , inputValue = ""
-      , error = Nothing
-      , tick = 0
-      }
+    ( initialModel
     , parseUrl location
         |> newUrl
     )
@@ -167,19 +172,29 @@ update msg model =
                 )
 
         UpdateSlideInfoList (Ok slideInfoList) ->
-            ( { model | slideInfoList = Just slideInfoList, error = Nothing }
-            , case model.laboiteID of
-                Nothing ->
-                    Cmd.none
-
-                Just laboiteID ->
+            let
+                slidesIdList =
                     slideInfoList
-                        |> List.map
-                            (\slideInfo ->
-                                requestSlide laboiteID slideInfo.id
-                            )
-                        |> Cmd.batch
-            )
+                        |> List.map (\s -> s.id)
+
+                updatedSlides =
+                    -- Remove slides that may not be present anymore
+                    model.slides
+                        |> List.filter (\s -> List.member s.id slidesIdList)
+            in
+                ( { model | slideInfoList = Just slideInfoList, slides = updatedSlides, error = Nothing }
+                , case model.laboiteID of
+                    Nothing ->
+                        Cmd.none
+
+                    Just laboiteID ->
+                        slideInfoList
+                            |> List.map
+                                (\slideInfo ->
+                                    requestSlide laboiteID slideInfo.id
+                                )
+                            |> Cmd.batch
+                )
 
         UpdateSlideInfoList (Err err) ->
             ( { model | error = Just err }, Cmd.none )
