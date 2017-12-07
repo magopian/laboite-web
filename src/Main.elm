@@ -177,21 +177,26 @@ update msg model =
                     slideInfoList
                         |> List.map (\s -> s.id)
 
-                updatedSlides =
+                prunedSlides =
                     -- Remove slides that may not be present anymore
                     model.slides
                         |> List.filter (\s -> List.member s.id slidesIdList)
+
+                slidesToUpdate =
+                    model.slideInfoList
+                        |> Maybe.withDefault []
+                        |> getSlidesToUpdate slideInfoList
             in
-                ( { model | slideInfoList = Just slideInfoList, slides = updatedSlides, error = Nothing }
+                ( { model | slideInfoList = Just slideInfoList, slides = prunedSlides, error = Nothing }
                 , case model.laboiteID of
                     Nothing ->
                         Cmd.none
 
                     Just laboiteID ->
-                        slideInfoList
+                        slidesToUpdate
                             |> List.map
-                                (\slideInfo ->
-                                    requestSlide laboiteID slideInfo.id
+                                (\slideID ->
+                                    requestSlide laboiteID slideID
                                 )
                             |> Cmd.batch
                 )
@@ -249,6 +254,17 @@ getDisplaySlide slides =
     slides
         |> List.head
         |> Maybe.withDefault loadingSlide
+
+
+getSlidesToUpdate : Matrix.SlideInfoList -> Matrix.SlideInfoList -> List Int
+getSlidesToUpdate slideInfoList previousSlideInfoList =
+    -- Only return slide IDs that changed since last time (last_activity was updated)
+    slideInfoList
+        |> List.filter
+            (\info ->
+                not <| List.member info previousSlideInfoList
+            )
+        |> List.map .id
 
 
 requestSlideInfoList : LaboiteID -> Cmd Msg

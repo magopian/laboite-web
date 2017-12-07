@@ -1,9 +1,7 @@
 module TestMain exposing (..)
 
 import Test exposing (..)
-import Decoder
 import Expect
-import Http
 import Main
 import Matrix
 
@@ -60,4 +58,22 @@ mainTest =
                             (Main.update (Main.UpdateSlideInfoList (Ok slideInfoList)) model)
                     in
                         Expect.equal updatedModel.slides [ slide1 ]
+            , test "getSlidesToUpdate only returns slide IDs that were updated" <|
+                \_ ->
+                    let
+                        slideInfoList : Matrix.SlideInfoList
+                        slideInfoList =
+                            [ { last_activity = 123, id = 1 }
+                            , { last_activity = 123, id = 2 }
+                            ]
+
+                        updatedSlideInfoList : Matrix.SlideInfoList
+                        updatedSlideInfoList =
+                            [ { last_activity = 123, id = 1 }
+                            , { last_activity = 124, id = 2 }
+                            ]
+                    in
+                        Expect.equal
+                            (Main.getSlidesToUpdate updatedSlideInfoList slideInfoList)
+                            [ 2 ]
             ]
