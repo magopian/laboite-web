@@ -2,10 +2,9 @@ module TestMain exposing (..)
 
 import Test exposing (..)
 import Expect
-import Kinto
 import KintoDecoders
 import Main
-import Matrix
+import Types
 
 
 -- Check out http://package.elm-lang.org/packages/elm-community/elm-test/latest to learn more about testing in Elm!
@@ -18,14 +17,14 @@ mainTest =
         initialModel =
             Main.initialModel
 
-        item1 : Matrix.Item
+        item1 : Types.Item
         item1 =
-            { content = (Matrix.Text "Foo")
+            { content = (Types.Text "Foo")
             , x = 0
             , y = 0
             }
 
-        slide1 : KintoDecoders.Slide
+        slide1 : Types.Slide
         slide1 =
             { id = "slide 1"
             , last_modified = 123
@@ -33,14 +32,14 @@ mainTest =
             , items = [ item1 ]
             }
 
-        item2 : Matrix.Item
+        item2 : Types.Item
         item2 =
-            { content = (Matrix.Text "Bar")
+            { content = (Types.Text "Bar")
             , x = 0
             , y = 0
             }
 
-        slide2 : KintoDecoders.Slide
+        slide2 : Types.Slide
         slide2 =
             { id = "slide 2"
             , last_modified = 123
@@ -55,14 +54,8 @@ mainTest =
                         model =
                             { initialModel | slides = [ slide1, slide2 ] }
 
-                        pager : Kinto.Pager KintoDecoders.Slide
                         pager =
-                            { client = KintoDecoders.client
-                            , objects = [ slide1 ]
-                            , decoder = KintoDecoders.slideListDecoder
-                            , total = 1
-                            , nextPage = Nothing
-                            }
+                            KintoDecoders.pagerFromSlides [ slide1 ]
 
                         ( updatedModel, _ ) =
                             (Main.update (Main.UpdateSlideList (Ok pager)) model)
@@ -71,7 +64,7 @@ mainTest =
             , test "getSlidesToUpdate only returns slide IDs that were updated" <|
                 \_ ->
                     let
-                        updatedSlide2 : KintoDecoders.Slide
+                        updatedSlide2 : Types.Slide
                         updatedSlide2 =
                             { slide2 | last_modified = 124 }
                     in

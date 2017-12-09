@@ -3,35 +3,7 @@ module Matrix exposing (..)
 import Array.Hamt as Array
 import Chars
 import Dict
-
-
-type ItemContent
-    = Text String
-    | Icon String Width Height
-
-
-type alias Item =
-    { content : ItemContent
-    , y : Int
-    , x : Int
-    }
-
-
-type alias Slide =
-    { duration : Int
-    , items : List Item
-    , id : Int
-    }
-
-
-type alias SlideInfo =
-    { last_activity : Int
-    , id : Int
-    }
-
-
-type alias SlideInfoList =
-    List SlideInfo
+import Types
 
 
 type Led
@@ -47,20 +19,12 @@ type alias Matrix =
     Array.Array MatrixRow
 
 
-type alias Width =
-    Int
-
-
-type alias Height =
-    Int
-
-
-emptyRow : Width -> MatrixRow
+emptyRow : Types.Width -> MatrixRow
 emptyRow width =
     Array.repeat width Black
 
 
-empty : Width -> Height -> Matrix
+empty : Types.Width -> Types.Height -> Matrix
 empty width height =
     emptyRow width
         |> Array.repeat height
@@ -165,7 +129,7 @@ dataToMatrix tick data x y matrix =
             |> Array.append matrixBefore
 
 
-itemToMatrix : Int -> Item -> Matrix -> Matrix
+itemToMatrix : Int -> Types.Item -> Matrix -> Matrix
 itemToMatrix tick item matrix =
     let
         content =
@@ -174,7 +138,7 @@ itemToMatrix tick item matrix =
         dataToMatrix tick content item.x item.y matrix
 
 
-itemsToMatrix : Int -> List Item -> Matrix -> Matrix
+itemsToMatrix : Int -> List Types.Item -> Matrix -> Matrix
 itemsToMatrix tick items matrix =
     items
         |> List.foldl (itemToMatrix tick) matrix
@@ -215,13 +179,13 @@ fromChar c =
                 Debug.crash "aouch, missing a font, and fallback missing"
 
 
-fromContent : ItemContent -> Matrix
+fromContent : Types.ItemContent -> Matrix
 fromContent itemContent =
     case itemContent of
-        Text text ->
+        Types.Text text ->
             fromText text
 
-        Icon hexContent width height ->
+        Types.Icon hexContent width height ->
             fromIcon width height hexContent
 
 
@@ -235,7 +199,7 @@ splitString size str =
             listHead :: splitString size (String.dropLeft size str)
 
 
-fromIcon : Width -> Height -> String -> Matrix
+fromIcon : Types.Width -> Types.Height -> String -> Matrix
 fromIcon width height content =
     content
         -- Drop the hexadecimal header "0x" from the content

@@ -9,6 +9,7 @@ import KintoDecoders
 import Matrix
 import Navigation
 import Time
+import Types
 import UrlParser exposing ((<?>))
 
 
@@ -17,8 +18,8 @@ import UrlParser exposing ((<?>))
 
 type alias Model =
     { laboiteID : Maybe String
-    , slideList : Maybe (List KintoDecoders.Slide)
-    , slides : List KintoDecoders.Slide
+    , slideList : Maybe (List Types.Slide)
+    , slides : List Types.Slide
     , matrix : Matrix.Matrix
     , inputValue : String
     , error : Maybe Kinto.Error
@@ -44,12 +45,12 @@ height =
     16
 
 
-loadingSlide : KintoDecoders.Slide
+loadingSlide : Types.Slide
 loadingSlide =
     { id = "loading slide"
     , display_time = 60
     , last_modified = 0
-    , items = [ Matrix.Item (Matrix.Text "Loading") 0 0 ]
+    , items = [ Types.Item (Types.Text "Loading") 0 0 ]
     }
 
 
@@ -108,7 +109,7 @@ newUrl maybeLaboiteID =
             Navigation.newUrl (urlFromData laboiteID)
 
 
-matrixFromSlides : Int -> List KintoDecoders.Slide -> Matrix.Matrix
+matrixFromSlides : Int -> List Types.Slide -> Matrix.Matrix
 matrixFromSlides tick slides =
     let
         slide =
@@ -121,7 +122,7 @@ matrixFromSlides tick slides =
             |> Matrix.itemsToMatrix tick slide.items
 
 
-cycleSlides : List KintoDecoders.Slide -> List KintoDecoders.Slide
+cycleSlides : List Types.Slide -> List Types.Slide
 cycleSlides slides =
     case slides of
         [] ->
@@ -139,8 +140,8 @@ type Msg
     = UpdateInputValue String
     | SubmitLaboiteID
     | NextSlide Time.Time
-    | UpdateSlideList (Result Kinto.Error (Kinto.Pager KintoDecoders.Slide))
-    | UpdateSlide (Result Kinto.Error KintoDecoders.Slide)
+    | UpdateSlideList (Result Kinto.Error (Kinto.Pager Types.Slide))
+    | UpdateSlide (Result Kinto.Error Types.Slide)
     | UrlChange Navigation.Location
     | NewTick Time.Time
 
@@ -253,14 +254,14 @@ update msg model =
                 ( { model | tick = newTick, matrix = matrixFromSlides newTick model.slides }, Cmd.none )
 
 
-getDisplaySlide : List KintoDecoders.Slide -> KintoDecoders.Slide
+getDisplaySlide : List Types.Slide -> Types.Slide
 getDisplaySlide slides =
     slides
         |> List.head
         |> Maybe.withDefault loadingSlide
 
 
-getSlidesToUpdate : List KintoDecoders.Slide -> List KintoDecoders.Slide -> List String
+getSlidesToUpdate : List Types.Slide -> List Types.Slide -> List String
 getSlidesToUpdate slideList previousSlideList =
     -- Only return slide IDs that changed since last time (last_activity was updated)
     slideList
@@ -283,7 +284,7 @@ requestSlide laboiteID slideID =
         |> Kinto.send UpdateSlide
 
 
-updateSlide : KintoDecoders.Slide -> List KintoDecoders.Slide -> List KintoDecoders.Slide
+updateSlide : Types.Slide -> List Types.Slide -> List Types.Slide
 updateSlide slide slides =
     let
         updatedSlides =
@@ -372,7 +373,7 @@ toPixelAttr px =
         attr ++ "px"
 
 
-displayMatrix : Matrix.Width -> Matrix.Height -> Matrix.Matrix -> Html.Html Msg
+displayMatrix : Types.Width -> Types.Height -> Matrix.Matrix -> Html.Html Msg
 displayMatrix width height matrix =
     Html.div
         [ Html.Attributes.class "led" ]
