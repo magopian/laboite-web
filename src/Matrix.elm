@@ -185,8 +185,8 @@ fromContent itemContent =
         Types.Text text ->
             fromText text
 
-        Types.Icon hexContent width height ->
-            fromIcon width height hexContent
+        Types.Icon hexContent width ->
+            fromIcon width hexContent
 
 
 splitString : Int -> String -> List String
@@ -199,8 +199,8 @@ splitString size str =
             listHead :: splitString size (String.dropLeft size str)
 
 
-fromIcon : Types.Width -> Types.Height -> String -> Matrix
-fromIcon width height content =
+fromIcon : Types.Width -> String -> Matrix
+fromIcon width content =
     content
         -- Drop the hexadecimal header "0x" from the content
         |> String.dropLeft 2

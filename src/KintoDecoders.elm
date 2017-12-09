@@ -31,7 +31,7 @@ slideResource laboiteID =
 
 textItemDecoder : Decode.Decoder Types.Item
 textItemDecoder =
-    Pipeline.decode toMatrixItem
+    Pipeline.decode textToMatrixItem
         |> Pipeline.required "type" Decode.string
         |> Pipeline.required "x" Decode.int
         |> Pipeline.required "y" Decode.int
@@ -39,13 +39,41 @@ textItemDecoder =
         |> Pipeline.resolve
 
 
-toMatrixItem : String -> Int -> Int -> String -> Decode.Decoder Types.Item
-toMatrixItem type_ x y content =
+textToMatrixItem : String -> Int -> Int -> String -> Decode.Decoder Types.Item
+textToMatrixItem type_ x y content =
     Decode.succeed
         { content = Types.Text content
         , x = x
         , y = y
         }
+
+
+iconItemDecoder : Decode.Decoder Types.Item
+iconItemDecoder =
+    Pipeline.decode iconToMatrixItem
+        |> Pipeline.required "type" Decode.string
+        |> Pipeline.required "x" Decode.int
+        |> Pipeline.required "y" Decode.int
+        |> Pipeline.required "content" Decode.string
+        |> Pipeline.required "width" Decode.int
+        |> Pipeline.resolve
+
+
+iconToMatrixItem : String -> Int -> Int -> String -> Int -> Decode.Decoder Types.Item
+iconToMatrixItem type_ x y content width =
+    Decode.succeed
+        { content = Types.Icon content width
+        , x = x
+        , y = y
+        }
+
+
+itemDecoder : Decode.Decoder Types.Item
+itemDecoder =
+    Decode.oneOf
+        [ textItemDecoder
+        , iconItemDecoder
+        ]
 
 
 slideDecoder : Decode.Decoder Types.Slide
@@ -54,7 +82,7 @@ slideDecoder =
         |> Pipeline.required "id" Decode.string
         |> Pipeline.required "last_modified" Decode.int
         |> Pipeline.required "display_time" Decode.int
-        |> Pipeline.required "items" (Decode.list textItemDecoder)
+        |> Pipeline.required "items" (Decode.list itemDecoder)
 
 
 slideListDecoder : Decode.Decoder (List Types.Slide)

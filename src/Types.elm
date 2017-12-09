@@ -18,7 +18,7 @@ type alias Item =
 
 type ItemContent
     = Text String
-    | Icon String Width Height
+    | Icon String Width
 
 
 type alias Width =

@@ -153,7 +153,7 @@ matrix =
         , test "fromIcon converts a string of hex to a Matrix" <|
             \_ ->
                 Expect.equal
-                    (Matrix.fromIcon 4 2 "0xf0")
+                    (Matrix.fromIcon 4 "0xf0")
                     (Array.fromList
                         [ Matrix.stringToLeds "1111"
                         , Matrix.stringToLeds "0000"
@@ -163,12 +163,12 @@ matrix =
             \_ ->
                 let
                     m1 =
-                        Matrix.fromIcon 4 2 "0xf0"
+                        Matrix.fromIcon 4 "0xf0"
 
                     m2 =
-                        Matrix.fromIcon 4 2 "0x0f"
+                        Matrix.fromIcon 4 "0x0f"
                 in
-                    Expect.equal (Matrix.append m1 m2) (Matrix.fromIcon 8 2 "0xf00f")
+                    Expect.equal (Matrix.append m1 m2) (Matrix.fromIcon 8 "0xf00f")
         , test "fromText converts a string to a Matrix" <|
             \_ ->
                 let
