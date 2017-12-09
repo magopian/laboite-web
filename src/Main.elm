@@ -17,7 +17,7 @@ import UrlParser exposing ((<?>))
 
 type alias Model =
     { laboiteID : Maybe String
-    , slideInfoList : Maybe (List KintoDecoders.Slide)
+    , slideList : Maybe (List KintoDecoders.Slide)
     , slides : List KintoDecoders.Slide
     , matrix : Matrix.Matrix
     , inputValue : String
@@ -56,7 +56,7 @@ loadingSlide =
 initialModel : Model
 initialModel =
     { laboiteID = Nothing
-    , slideInfoList = Nothing
+    , slideList = Nothing
     , slides = []
     , matrix = matrixFromSlides 0 []
     , inputValue = ""
@@ -139,7 +139,7 @@ type Msg
     = UpdateInputValue String
     | SubmitLaboiteID
     | NextSlide Time.Time
-    | UpdateSlideInfoList (Result Kinto.Error (Kinto.Pager KintoDecoders.Slide))
+    | UpdateSlideList (Result Kinto.Error (Kinto.Pager KintoDecoders.Slide))
     | UpdateSlide (Result Kinto.Error KintoDecoders.Slide)
     | UrlChange Navigation.Location
     | NewTick Time.Time
@@ -166,19 +166,19 @@ update msg model =
                   }
                 , case model.laboiteID of
                     Just laboiteID ->
-                        requestSlideInfoList laboiteID
+                        requestSlideList laboiteID
 
                     _ ->
                         Cmd.none
                 )
 
-        UpdateSlideInfoList (Ok slidesPager) ->
+        UpdateSlideList (Ok slidesPager) ->
             let
-                slideInfoList =
+                slideList =
                     slidesPager.objects
 
                 slidesIdList =
-                    slideInfoList
+                    slideList
                         |> List.map (\s -> s.id)
 
                 prunedSlides =
@@ -187,11 +187,11 @@ update msg model =
                         |> List.filter (\s -> List.member s.id slidesIdList)
 
                 slidesToUpdate =
-                    model.slideInfoList
+                    model.slideList
                         |> Maybe.withDefault []
-                        |> getSlidesToUpdate slideInfoList
+                        |> getSlidesToUpdate slideList
             in
-                ( { model | slideInfoList = Just slideInfoList, slides = prunedSlides, error = Nothing }
+                ( { model | slideList = Just slideList, slides = prunedSlides, error = Nothing }
                 , case model.laboiteID of
                     Nothing ->
                         Cmd.none
@@ -205,7 +205,7 @@ update msg model =
                             |> Cmd.batch
                 )
 
-        UpdateSlideInfoList (Err err) ->
+        UpdateSlideList (Err err) ->
             ( { model | error = Just err }, Cmd.none )
 
         UpdateSlide (Ok slide) ->
@@ -242,7 +242,7 @@ update msg model =
                         Cmd.none
 
                     Just laboiteID ->
-                        requestSlideInfoList laboiteID
+                        requestSlideList laboiteID
                 )
 
         NewTick _ ->
@@ -261,20 +261,20 @@ getDisplaySlide slides =
 
 
 getSlidesToUpdate : List KintoDecoders.Slide -> List KintoDecoders.Slide -> List String
-getSlidesToUpdate slideInfoList previousSlideInfoList =
+getSlidesToUpdate slideList previousSlideList =
     -- Only return slide IDs that changed since last time (last_activity was updated)
-    slideInfoList
+    slideList
         |> List.filter
-            (\info ->
-                not <| List.member info previousSlideInfoList
+            (\slide ->
+                not <| List.member slide previousSlideList
             )
         |> List.map .id
 
 
-requestSlideInfoList : LaboiteID -> Cmd Msg
-requestSlideInfoList laboiteID =
+requestSlideList : LaboiteID -> Cmd Msg
+requestSlideList laboiteID =
     KintoDecoders.getSlides laboiteID
-        |> Kinto.send UpdateSlideInfoList
+        |> Kinto.send UpdateSlideList
 
 
 requestSlide : LaboiteID -> SlideID -> Cmd Msg
@@ -311,7 +311,7 @@ updateSlide slide slides =
 
 view : Model -> Html.Html Msg
 view model =
-    case model.slideInfoList of
+    case model.slideList of
         Nothing ->
             viewGetLaboiteID model
 

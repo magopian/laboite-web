@@ -31,8 +31,8 @@ slideResource laboiteID =
 
 type alias Slide =
     { id : String
-    , display_time : Int
     , last_modified : Int
+    , display_time : Int
     , items : List Matrix.Item
     }
 
@@ -60,8 +60,8 @@ slideDecoder : Decode.Decoder Slide
 slideDecoder =
     Pipeline.decode Slide
         |> Pipeline.required "id" Decode.string
-        |> Pipeline.required "display_time" Decode.int
         |> Pipeline.required "last_modified" Decode.int
+        |> Pipeline.required "display_time" Decode.int
         |> Pipeline.required "items" (Decode.list textItemDecoder)
 
 

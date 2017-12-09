@@ -2,6 +2,8 @@ module TestMain exposing (..)
 
 import Test exposing (..)
 import Expect
+import Kinto
+import KintoDecoders
 import Main
 import Matrix
 
@@ -23,11 +25,12 @@ mainTest =
             , y = 0
             }
 
-        slide1 : Matrix.Slide
+        slide1 : KintoDecoders.Slide
         slide1 =
-            { duration = 5
+            { id = "slide 1"
+            , last_modified = 123
+            , display_time = 5
             , items = [ item1 ]
-            , id = 1
             }
 
         item2 : Matrix.Item
@@ -37,43 +40,42 @@ mainTest =
             , y = 0
             }
 
+        slide2 : KintoDecoders.Slide
         slide2 =
-            { duration = 5
+            { id = "slide 2"
+            , last_modified = 123
+            , display_time = 5
             , items = [ item2 ]
-            , id = 2
             }
     in
         describe "Main"
-            [ test "UpdateSlideInfoList removes slides that aren't present anymore" <|
+            [ test "UpdateSlideList removes slides that aren't present anymore" <|
                 \_ ->
                     let
                         model =
                             { initialModel | slides = [ slide1, slide2 ] }
 
-                        slideInfoList : Matrix.SlideInfoList
-                        slideInfoList =
-                            [ { last_activity = 123, id = 1 } ]
+                        pager : Kinto.Pager KintoDecoders.Slide
+                        pager =
+                            { client = KintoDecoders.client
+                            , objects = [ slide1 ]
+                            , decoder = KintoDecoders.slideListDecoder
+                            , total = 1
+                            , nextPage = Nothing
+                            }
 
                         ( updatedModel, _ ) =
-                            (Main.update (Main.UpdateSlideInfoList (Ok slideInfoList)) model)
+                            (Main.update (Main.UpdateSlideList (Ok pager)) model)
                     in
                         Expect.equal updatedModel.slides [ slide1 ]
             , test "getSlidesToUpdate only returns slide IDs that were updated" <|
                 \_ ->
                     let
-                        slideInfoList : Matrix.SlideInfoList
-                        slideInfoList =
-                            [ { last_activity = 123, id = 1 }
-                            , { last_activity = 123, id = 2 }
-                            ]
-
-                        updatedSlideInfoList : Matrix.SlideInfoList
-                        updatedSlideInfoList =
-                            [ { last_activity = 123, id = 1 }
-                            , { last_activity = 124, id = 2 }
-                            ]
+                        updatedSlide2 : KintoDecoders.Slide
+                        updatedSlide2 =
+                            { slide2 | last_modified = 124 }
                     in
                         Expect.equal
-                            (Main.getSlidesToUpdate updatedSlideInfoList slideInfoList)
-                            [ 2 ]
+                            (Main.getSlidesToUpdate [ slide1, updatedSlide2 ] [ slide1, slide2 ])
+                            [ "slide 2" ]
             ]
